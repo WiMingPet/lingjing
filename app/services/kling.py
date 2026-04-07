@@ -5,7 +5,7 @@ import requests
 import jwt
 import time
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from app.config import settings
 
 
