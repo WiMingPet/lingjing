@@ -61,7 +61,13 @@ async def generate_image(
     # ========== 确保用户存在，如果不存在则自动创建 ==========
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        user = User(id=user_id, username=f"user_{user_id}")
+        from datetime import datetime
+        user = User(
+            id=user_id,
+            phone=f"temp_{user_id}@example.com",
+            username=f"user_{user_id}",
+            password_hash="auto_created_temp_hash"
+        )
         db.add(user)
         db.commit()
         print(f"[DEBUG] 自动创建了用户: id={user.id}")
