@@ -44,7 +44,7 @@ async def generate_video(
     # 确保用户存在，如果不存在则自动创建
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        user = User(id=user_id, username=f"user_{user_id}", email=f"user_{user_id}@temp.com")
+        user = User(id=user_id, username=f"user_{user_id}")
         db.add(user)
         db.commit()
         print(f"[DEBUG] 自动创建了用户: id={user.id}")
