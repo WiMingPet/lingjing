@@ -7,6 +7,7 @@ from typing import Optional
 from app.database import get_db
 from app.schemas.task import APIResponse, TaskResponse
 from app.services.tryon_service import TryonService
+from app.models.user import User  # 新增导入
 
 router = APIRouter(prefix="/tryon", tags=["虚拟试穿"])
 
@@ -40,6 +41,15 @@ async def generate_tryon(
     
     # 临时使用固定用户 ID 1
     user_id = 1
+    
+    # ========== 确保用户存在，如果不存在则自动创建 ==========
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = User(id=user_id, username=f"user_{user_id}", email=f"user_{user_id}@temp.com")
+        db.add(user)
+        db.commit()
+        print(f"[DEBUG] 自动创建了用户: id={user.id}")
+    # ========== 新增代码结束 ==========
     
     task = await TryonService.generate_tryon(db, user_id, request_data)
     

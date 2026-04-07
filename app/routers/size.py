@@ -9,6 +9,7 @@ import os
 from app.database import get_db
 from app.schemas.task import APIResponse, TaskResponse
 from app.services.size_service import SizeService
+from app.models.user import User  # 新增导入
 
 router = APIRouter(prefix="/size", tags=["尺码推荐"])
 
@@ -38,6 +39,16 @@ async def recommend_size(
     
     try:
         user_id = 1
+        
+        # ========== 确保用户存在，如果不存在则自动创建 ==========
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            user = User(id=user_id, username=f"user_{user_id}", email=f"user_{user_id}@temp.com")
+            db.add(user)
+            db.commit()
+            print(f"[DEBUG] 自动创建了用户: id={user.id}")
+        # ========== 新增代码结束 ==========
+        
         task = await SizeService.recommend_size(db, user_id, image_path, height)
         
         return APIResponse(
