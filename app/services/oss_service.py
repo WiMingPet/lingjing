@@ -23,6 +23,19 @@ class OSSService:
             settings.OSS_BUCKET_NAME
         )
     
+    def _get_content_type(self, file_extension: str) -> str:
+        """根据文件扩展名获取 Content-Type"""
+        content_type_map = {
+            "mp4": "video/mp4",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "png": "image/png",
+            "webp": "image/webp",
+            "gif": "image/gif",
+            "pdf": "application/pdf",
+        }
+        return content_type_map.get(file_extension.lower(), "application/octet-stream")
+    
     async def upload_file(
         self, 
         file_content: bytes, 
@@ -41,7 +54,15 @@ class OSSService:
             文件的公网访问 URL
         """
         filename = f"{sub_folder}/{uuid.uuid4()}.{file_extension}"
-        self.bucket.put_object(filename, file_content)
+        
+        # 设置文件元数据（Content-Type 和公共读权限）
+        content_type = self._get_content_type(file_extension)
+        headers = {
+            'Content-Type': content_type,
+            'x-oss-object-acl': 'public-read'  # 设置为公共读
+        }
+        
+        self.bucket.put_object(filename, file_content, headers=headers)
         
         # 返回公网 URL
         url = f"https://{settings.OSS_BUCKET_NAME}.{settings.OSS_ENDPOINT}/{filename}"
