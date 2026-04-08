@@ -61,6 +61,20 @@ class VideoService:
             video_url = result.get("task_result", {}).get("video_url", "")
             print(f"[DEBUG] 视频URL: {video_url}")
             
+            # ========== 上传视频到 OSS ==========
+            if video_url:
+                try:
+                    oss_video_url = await oss_service.upload_file_from_url(
+                        video_url,
+                        "mp4",
+                        "videos"
+                    )
+                    print(f"[DEBUG] 视频已上传到 OSS: {oss_video_url}")
+                    video_url = oss_video_url  # 替换成 OSS URL
+                except Exception as e:
+                    print(f"[DEBUG] OSS 上传失败，使用原始 URL: {e}")
+            # ========== OSS 上传结束 ==========
+            
             output_data = {
                 "task_id": api_task_id,
                 "video_url": video_url,
