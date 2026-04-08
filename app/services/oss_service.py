@@ -32,7 +32,6 @@ class OSSService:
             "png": "image/png",
             "webp": "image/webp",
             "gif": "image/gif",
-            "pdf": "application/pdf",
         }
         return content_type_map.get(file_extension.lower(), "application/octet-stream")
     
@@ -44,28 +43,24 @@ class OSSService:
     ) -> str:
         """
         上传文件到 OSS
-        
-        Args:
-            file_content: 文件二进制内容
-            file_extension: 文件扩展名（如 'jpg', 'mp4'）
-            sub_folder: 子文件夹名称（默认 'uploads'）
-        
-        Returns:
-            文件的公网访问 URL
         """
         filename = f"{sub_folder}/{uuid.uuid4()}.{file_extension}"
         
-        # 设置文件元数据（Content-Type 和公共读权限）
+        # 获取正确的 Content-Type
         content_type = self._get_content_type(file_extension)
+        
+        # 设置请求头
         headers = {
             'Content-Type': content_type,
-            'x-oss-object-acl': 'public-read'  # 设置为公共读
+            'x-oss-object-acl': 'public-read'
         }
         
+        # 上传文件（带上 headers）
         self.bucket.put_object(filename, file_content, headers=headers)
         
         # 返回公网 URL
         url = f"https://{settings.OSS_BUCKET_NAME}.{settings.OSS_ENDPOINT}/{filename}"
+        print(f"[OSS] 文件上传成功: {url}, Content-Type: {content_type}")
         return url
     
     async def upload_file_from_url(
@@ -76,14 +71,6 @@ class OSSService:
     ) -> str:
         """
         从网络 URL 下载文件并上传到 OSS
-        
-        Args:
-            file_url: 网络文件 URL
-            file_extension: 文件扩展名
-            sub_folder: 子文件夹名称
-        
-        Returns:
-            上传后的 OSS URL
         """
         import httpx
         
@@ -98,7 +85,6 @@ class OSSService:
     
     def delete_file(self, file_url: str) -> bool:
         """删除 OSS 中的文件"""
-        # 从 URL 中提取文件名
         filename = file_url.split(f"{settings.OSS_BUCKET_NAME}.{settings.OSS_ENDPOINT}/")[-1]
         try:
             self.bucket.delete_object(filename)
@@ -107,5 +93,4 @@ class OSSService:
             return False
 
 
-# 全局单例
 oss_service = OSSService()
