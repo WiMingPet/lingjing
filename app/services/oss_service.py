@@ -52,8 +52,10 @@ class OSSService:
         # 设置请求头
         headers = {
             'Content-Type': content_type,
-            'x-oss-object-acl': 'public-read'
+            'x-oss-object-acl': 'public-read',
+            'Content-Disposition': 'inline'   # 加这一行
         }
+        
         
         # 上传文件（带上 headers）
         self.bucket.put_object(filename, file_content, headers=headers)
