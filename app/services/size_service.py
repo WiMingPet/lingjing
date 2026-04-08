@@ -11,18 +11,25 @@ class SizeService:
     """尺码推荐服务"""
 
     @staticmethod
-    async def recommend_size(db: Session, user_id: int, image_url: str, height_cm: float = 170.0) -> Task:
+    async def recommend_size(db: Session, user_id: int, image_path: str, height_cm: float = 170.0, oss_url: str = None) -> Task:
         """
         从图片推荐尺码
+        
+        Args:
+            db: 数据库会话
+            user_id: 用户ID
+            image_path: 本地图片路径（用于 MediaPipe 处理）
+            height_cm: 用户身高（厘米）
+            oss_url: OSS 公网 URL（用于存储和展示）
         """
         print("[DEBUG] ========== 开始尺码推荐 ==========")
         
-        # 创建任务
+        # 创建任务，保存 OSS URL
         task = Task(
             user_id=user_id,
             task_type="size_recommend",
             status="processing",
-            input_data={"image_url": image_url, "height_cm": height_cm},
+            input_data={"image_url": oss_url, "height_cm": height_cm},
             progress=0
         )
         db.add(task)
@@ -31,8 +38,8 @@ class SizeService:
         print(f"[DEBUG] 尺码推荐任务创建成功，ID: {task.id}")
         
         try:
-            # 调用尺寸估算
-            result = size_estimator.estimate_from_image(image_url, height_cm)
+            # 调用尺寸估算（传入本地文件路径）
+            result = size_estimator.estimate_from_image(image_path, height_cm)
             
             if not result.get("success"):
                 raise Exception(result.get("error", "估算失败"))
@@ -43,7 +50,8 @@ class SizeService:
                 "hip": result["hip"],
                 "shoulder_width": result["shoulder_width"],
                 "recommended_size": result["recommended_size"],
-                "confidence": result["confidence"]
+                "confidence": result["confidence"],
+                "image_url": oss_url  # 添加 OSS URL 到输出
             }
             
             task.status = "completed"

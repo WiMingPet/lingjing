@@ -9,7 +9,8 @@ import os
 from app.database import get_db
 from app.schemas.task import APIResponse, TaskResponse
 from app.services.size_service import SizeService
-from app.models.user import User  # 新增导入
+from app.models.user import User
+from app.utils.file_utils import upload_file_helper  # 新增：导入 OSS 上传工具
 
 router = APIRouter(prefix="/size", tags=["尺码推荐"])
 
@@ -26,7 +27,14 @@ async def recommend_size(
     - **image**: 全身照片（必填）
     - **height**: 身高（厘米），默认170
     """
-    # 保存上传的图片到临时文件
+    # ========== 上传用户图片到 OSS ==========
+    # 上传图片到 OSS，获取公网 URL
+    image_url, image_id = await upload_file_helper(image, "size")
+    print(f"[DEBUG] 图片已上传到 OSS: {image_url}")
+    # ========== OSS 上传结束 ==========
+    
+    # 保存上传的图片到临时文件（用于 MediaPipe 处理）
+    # 注意：upload_file_helper 已经读取过一次文件内容，需要重新读取
     content = await image.read()
     
     # 创建临时文件
@@ -34,8 +42,9 @@ async def recommend_size(
         f.write(content)
         image_path = f.name
     
-    print(f"[DEBUG] 图片已保存: {image_path}")
+    print(f"[DEBUG] 图片已保存到临时文件: {image_path}")
     print(f"[DEBUG] 身高: {height}cm")
+    print(f"[DEBUG] OSS URL: {image_url}")
     
     try:
         user_id = 1
@@ -55,7 +64,8 @@ async def recommend_size(
             print(f"[DEBUG] 自动创建了用户: id={user.id}")
         # ========== 新增代码结束 ==========
         
-        task = await SizeService.recommend_size(db, user_id, image_path, height)
+        # 调用尺码推荐服务，传入图片路径、身高和 OSS URL
+        task = await SizeService.recommend_size(db, user_id, image_path, height, image_url)
         
         return APIResponse(
             code=200,

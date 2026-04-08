@@ -7,7 +7,8 @@ from typing import Optional
 from app.database import get_db
 from app.schemas.task import APIResponse, TaskResponse
 from app.services.tryon_service import TryonService
-from app.models.user import User  # 新增导入
+from app.models.user import User
+from app.utils.file_utils import upload_file_helper  # 新增：导入 OSS 上传工具
 
 router = APIRouter(prefix="/tryon", tags=["虚拟试穿"])
 
@@ -26,12 +27,15 @@ async def generate_tryon(
     - **garment_image**: 服装图片（必填）
     - **digital_human_id**: 数字人ID（可选）
     """
-    # 临时使用公网测试图片（直接用你提供的亚马逊图片）
-    model_image_url = "https://m.media-amazon.com/images/I/71jgn+xibhL._AC_SY550_.jpg"
-    garment_image_url = "https://m.media-amazon.com/images/I/61OarLRya0L._AC_SY550_.jpg"
+    # ========== 上传用户图片到 OSS ==========
+    # 上传模特图
+    model_image_url, model_image_id = await upload_file_helper(model_image, "tryon/model")
+    print(f"[DEBUG] 模特图片已上传到 OSS: {model_image_url}")
     
-    print(f"[DEBUG] 使用模特图片URL: {model_image_url}")
-    print(f"[DEBUG] 使用服装图片URL: {garment_image_url}")
+    # 上传服装图
+    garment_image_url, garment_image_id = await upload_file_helper(garment_image, "tryon/garment")
+    print(f"[DEBUG] 服装图片已上传到 OSS: {garment_image_url}")
+    # ========== OSS 上传结束 ==========
     
     request_data = {
         "model_image_url": model_image_url,

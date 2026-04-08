@@ -1,44 +1,53 @@
 """
 文件上传工具
 """
-import os
 import uuid
-import shutil
-from typing import Dict, Optional
+from typing import Tuple
 from fastapi import UploadFile
-from app.config import settings
+from app.services.oss_service import oss_service
 
 
-async def upload_file_helper(file: UploadFile, folder: str = "uploads") -> Dict:
+async def upload_file_to_oss(
+    file: UploadFile,
+    sub_folder: str = "uploads"
+) -> Tuple[str, str]:
     """
-    上传文件到本地存储
-    返回: {"file_id": "xxx", "url": "xxx", "filename": "xxx"}
+    上传文件到 OSS
+    
+    Args:
+        file: 上传的文件对象
+        sub_folder: OSS 子文件夹名称
+    
+    Returns:
+        (file_url, file_id) 元组，file_url 是 OSS 公网地址，file_id 是文件名
     """
-    try:
-        # 创建上传目录
-        upload_dir = os.path.join(settings.UPLOAD_DIR, folder)
-        os.makedirs(upload_dir, exist_ok=True)
-        
-        # 生成唯一文件名
-        file_ext = os.path.splitext(file.filename)[1]
-        file_id = str(uuid.uuid4())
-        filename = f"{file_id}{file_ext}"
-        file_path = os.path.join(upload_dir, filename)
-        
-        # 保存文件
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-        
-        # 返回文件信息
-        # 注意：这里返回的是本地路径，生产环境应返回 URL
-        return {
-            "file_id": file_id,
-            "url": f"/uploads/{folder}/{filename}",  # 本地访问路径
-            "filename": file.filename,
-            "path": file_path
-        }
-        
-    except Exception as e:
-        print(f"[ERROR] 文件上传失败: {e}")
-        raise Exception(f"文件上传失败: {str(e)}")
+    # 读取文件内容
+    content = await file.read()
+    
+    # 获取文件扩展名
+    extension = file.filename.split(".")[-1].lower()
+    
+    # 生成唯一文件名（作为 file_id）
+    file_id = f"{uuid.uuid4()}.{extension}"
+    full_path = f"{sub_folder}/{file_id}"
+    
+    # 上传到 OSS
+    headers = {
+        'Content-Type': f'image/{extension}' if extension in ['jpg', 'jpeg', 'png', 'webp', 'gif'] else 'application/octet-stream',
+        'x-oss-object-acl': 'public-read',
+        'Content-Disposition': 'inline'
+    }
+    
+    oss_service.bucket.put_object(full_path, content, headers=headers)
+    
+    # 生成公网 URL
+    file_url = f"https://{oss_service.bucket.bucket_name}.{oss_service.bucket.endpoint.replace('https://', '')}/{full_path}"
+    
+    # 重置文件指针（以便后续可能再次读取）
+    await file.seek(0)
+    
+    return file_url, file_id
+
+
+# 保留原有函数名，方便调用
+upload_file_helper = upload_file_to_oss
