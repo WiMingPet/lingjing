@@ -22,6 +22,9 @@
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.21.0"
   },
+  "devDependencies": {
+    "expo-cli": "^6.3.10"
+  },
   "private": true,
   "engines": {
     "node": ">=18.0.0",
