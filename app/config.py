@@ -23,11 +23,12 @@ class Settings(BaseSettings):
     KLING_API_SECRET: str = ""
     KLING_API_URL: str = "https://api-beijing.klingai.com/v1"
 
-    # OSS
+    # OSS 配置
     OSS_ACCESS_KEY_ID: str = ""
     OSS_ACCESS_KEY_SECRET: str = ""
-    OSS_BUCKET_NAME: str = "ai-creative-bucket"
-    OSS_ENDPOINT: str = "oss-cn-hangzhou.aliyuncs.com"
+    OSS_BUCKET_NAME: str = "lingjing-media"
+    OSS_ENDPOINT: str = "oss-cn-shenzhen.aliyuncs.com"
+    OSS_INTERNAL_ENDPOINT: str = "oss-cn-shenzhen-internal.aliyuncs.com"
 
     # File Storage
     UPLOAD_DIR: str = "./uploads"

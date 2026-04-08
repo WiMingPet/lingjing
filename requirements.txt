@@ -20,3 +20,4 @@ pillow
 numpy
 scikit-learn
 PyJWT==2.8.0
+oss2==2.18.4
