@@ -42,8 +42,8 @@ async def generate_image(
     # 处理参考图上传
     reference_image_id = None
     if reference_image:
-        file_info = await upload_file_helper(reference_image, "reference")
-        reference_image_id = file_info["file_id"]
+        file_url, file_id = await upload_file_helper(reference_image, "reference")
+        reference_image_id = file_id
 
     # 创建任务
     request_data = {
